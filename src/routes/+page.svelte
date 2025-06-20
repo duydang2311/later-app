@@ -13,6 +13,7 @@
 	let caretEl = $state.raw<HTMLDivElement>();
 	let caretLh = 1;
 	let blinkTimeout = 0;
+	let caretHeight: number | undefined;
 	let editor = $state.raw<Editor>();
 	let springCaretWidth = new Spring(16, { damping: 0.9, stiffness: 0.8 });
 	let todosHandle = $state.raw<Todos>();
@@ -22,12 +23,23 @@
 	const { scrollEl, db } = useRuntime();
 
 	const updateCaret = (editor: Editor, instant?: boolean) => {
+		if (!caretEl) {
+			return;
+		}
+
+		caretHeight ??= parseFloat(getComputedStyle(caretEl).lineHeight);
+
 		const from = editor.state.selection.from;
 		const fromCoords = editor.view.coordsAtPos(Math.min(from, editor.state.doc.content.size - 1));
-		springTop.set(fromCoords.top + (fromCoords.bottom - fromCoords.top - lhToPx(caretLh)) / 2, {
+		let top = fromCoords.top + (fromCoords.bottom - fromCoords.top - caretHeight) / 2;
+		let left = fromCoords.left;
+
+		top -= window.visualViewport?.offsetTop ?? 0;
+		left -= window.visualViewport?.offsetLeft ?? 0;
+		springTop.set(top, {
 			instant,
 		});
-		springLeft.set(fromCoords.left, { instant });
+		springLeft.set(left, { instant });
 		if (!editor.state.selection.empty) {
 			springCaretWidth.set(0, { instant: true });
 		} else {
@@ -45,14 +57,6 @@
 			caretEl?.classList.remove('animate-caret-pop');
 			caretEl?.classList.add('animate-caret-blink');
 		}, 400);
-	};
-
-	const lhToPx = (lh: number) => {
-		if (!caretEl) {
-			return 0;
-		}
-		const fontSize = parseFloat(getComputedStyle(caretEl).fontSize);
-		return lh * fontSize;
 	};
 
 	const onSubmit = async (editor: Editor) => {
