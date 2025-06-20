@@ -79,7 +79,7 @@
 						onclick={() => {
 							setComplete(todo.id, !todo.completed);
 						}}
-						class="rounded-sm transition flex items-center gap-4 py-2"
+						class="rounded-sm transition flex items-center gap-4 py-2 wrap-anywhere text-left"
 					>
 						<div
 							class={[

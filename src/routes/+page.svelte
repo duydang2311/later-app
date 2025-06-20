@@ -108,8 +108,8 @@
 	});
 </script>
 
-<main class="relative grow mx-auto flex flex-col justify-end gap-16">
-	<div class="p-0">
+<main class="relative grow mx-auto max-w-full flex flex-col justify-end gap-16">
+	<div class="max-sm:px-8">
 		<p class="font-sm font-medium text-base-fg/40">
 			{Intl.DateTimeFormat(getUserLocales(), { dateStyle: 'medium' }).format(Date.now())}
 		</p>
@@ -146,7 +146,7 @@
 							attributes: {
 								spellcheck: 'false',
 								class:
-									'focus:outline-none font-playful max-w-lg text-3xl caret-transparent text-base-fg',
+									'focus:outline-none font-playful max-w-full text-3xl caret-transparent text-base-fg',
 							},
 						},
 						onTransaction: ({ editor: e }) => {
