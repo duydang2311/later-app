@@ -1,2 +1,247 @@
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://svelte.dev/docs/kit">svelte.dev/docs/kit</a> to read the documentation</p>
+<script lang="ts">
+	import { useRuntime } from '$lib/services/runtime';
+	import { getUserLocales } from '$lib/utils';
+	import { Editor, Extension } from '@tiptap/core';
+	import Document from '@tiptap/extension-document';
+	import Paragraph from '@tiptap/extension-paragraph';
+	import Placeholder from '@tiptap/extension-placeholder';
+	import Text from '@tiptap/extension-text';
+	import { onMount } from 'svelte';
+	import { Spring } from 'svelte/motion';
+	import Todos from './Todos.svelte';
+
+	let caretEl = $state.raw<HTMLDivElement>();
+	let caretLh = 1;
+	let blinkTimeout = 0;
+	let editor = $state.raw<Editor>();
+	let springCaretWidth = new Spring(16, { damping: 0.9, stiffness: 0.8 });
+	let todosHandle = $state.raw<Todos>();
+	let todosContainerEl = $state.raw<HTMLDivElement>();
+	const springTop = new Spring(0, { damping: 0.6, stiffness: 0.2 });
+	const springLeft = new Spring(0, { damping: 0.6, stiffness: 0.2 });
+	const { scrollEl, db } = useRuntime();
+
+	const updateCaret = (editor: Editor, instant?: boolean) => {
+		const from = editor.state.selection.from;
+		const fromCoords = editor.view.coordsAtPos(Math.min(from, editor.state.doc.content.size - 1));
+		springTop.set(fromCoords.top + (fromCoords.bottom - fromCoords.top - lhToPx(caretLh)) / 2, {
+			instant,
+		});
+		springLeft.set(fromCoords.left, { instant });
+		if (!editor.state.selection.empty) {
+			springCaretWidth.set(0, { instant: true });
+		} else {
+			springCaretWidth.set(from >= editor.state.doc.content.size - 1 ? 16 : 2);
+		}
+
+		caretEl?.classList.remove('animate-caret-blink', 'animate-caret-pop');
+		requestAnimationFrame(() => {
+			caretEl?.classList.add('animate-caret-pop');
+		});
+		if (blinkTimeout) {
+			clearTimeout(blinkTimeout);
+		}
+		blinkTimeout = setTimeout(() => {
+			caretEl?.classList.remove('animate-caret-pop');
+			caretEl?.classList.add('animate-caret-blink');
+		}, 400);
+	};
+
+	const lhToPx = (lh: number) => {
+		if (!caretEl) {
+			return 0;
+		}
+		const fontSize = parseFloat(getComputedStyle(caretEl).fontSize);
+		return lh * fontSize;
+	};
+
+	const onSubmit = async (editor: Editor) => {
+		if (editor.isEmpty) {
+			return;
+		}
+		const content = editor.getText();
+		editor.commands.clearContent();
+		updateCaret(editor);
+
+		const now = new Date();
+		await db.put('todos', {
+			id: crypto.randomUUID(),
+			value: {
+				timestamp: now.getTime(),
+				date: `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`,
+				content,
+			},
+		});
+
+		await todosHandle?.invalidate();
+	};
+
+	onMount(() => {
+		const resizeObserver = new ResizeObserver(() => {
+			if (editor) {
+				updateCaret(editor, true);
+			}
+		});
+		resizeObserver.observe(document.documentElement);
+		if (todosContainerEl) {
+			resizeObserver.observe(todosContainerEl);
+		}
+		return () => {
+			resizeObserver.disconnect();
+		};
+	});
+
+	$effect(() => {
+		const handler = () => {
+			if (editor) {
+				updateCaret(editor, true);
+			}
+		};
+		scrollEl.current?.addEventListener('scroll', handler);
+		return () => {
+			scrollEl.current?.removeEventListener('scroll', handler);
+		};
+	});
+</script>
+
+<main class="relative grow mx-auto flex flex-col justify-end gap-16">
+	<div class="p-0">
+		<p class="font-sm font-medium text-base-fg/40">
+			{Intl.DateTimeFormat(getUserLocales(), { dateStyle: 'medium' }).format(Date.now())}
+		</p>
+		<p class="font-sm font-medium text-base-fg lowercase">What might you do today?</p>
+		<div class="relative">
+			<div
+				{@attach (el) => {
+					editor = new Editor({
+						element: el,
+						extensions: [
+							Document,
+							Text,
+							Paragraph,
+							Placeholder.configure({
+								placeholder: 'start typing...',
+								showOnlyWhenEditable: true,
+								showOnlyCurrent: true,
+							}),
+							Extension.create({
+								name: 'submit',
+								addKeyboardShortcuts() {
+									return {
+										Enter: () => {
+											onSubmit(editor!);
+											return true;
+										},
+									};
+								},
+							}),
+						],
+						injectCSS: true,
+						autofocus: true,
+						editorProps: {
+							attributes: {
+								spellcheck: 'false',
+								class:
+									'focus:outline-none font-playful max-w-lg text-3xl caret-transparent text-base-fg',
+							},
+						},
+						onTransaction: ({ editor: e }) => {
+							editor = undefined;
+							editor = e;
+							updateCaret(editor);
+						},
+					});
+				}}
+			></div>
+			{#if editor != null && !editor.isEmpty}
+				<div
+					class="absolute -bottom-4 translate-y-full left-0 font-sans text-sm align-baseline text-base-fg/40 lowercase text-nowrap"
+				>
+					Press <span
+						class="p-1 bg-primary/10 text-primary rounded-sm border border-primary/2 normal-case font-medium"
+					>
+						Enter
+					</span> once it's done.
+				</div>
+			{/if}
+		</div>
+		<div
+			bind:this={caretEl}
+			class={[
+				'fixed w-(--_width) text-3xl animate-caret-blink rounded-sm',
+				editor?.isEmpty ? 'bg-primary/40' : 'bg-primary',
+			]}
+			style="--_width: {springCaretWidth.current}px; height: {caretLh}lh; top: {springTop.current}px; left: {springLeft.current}px;"
+		></div>
+	</div>
+	<div bind:this={todosContainerEl}>
+		<Todos bind:this={todosHandle} />
+	</div>
+</main>
+
+<style>
+	@keyframes caret-pop {
+		0% {
+			transform: scale(1);
+			opacity: 1;
+		}
+		50% {
+			transform: scale(0.9);
+			opacity: 0.8;
+		}
+		100% {
+			transform: scale(1);
+			opacity: 1;
+		}
+	}
+
+	@keyframes caret-blink {
+		0% {
+			opacity: 1;
+		}
+		20% {
+			opacity: 0.4;
+		}
+		40% {
+			opacity: 1;
+		}
+		60% {
+			opacity: 1;
+		}
+		80% {
+			opacity: 0.4;
+		}
+		100% {
+			opacity: 1;
+		}
+	}
+
+	.animate-caret-blink {
+		animation: caret-blink 2s ease infinite alternate;
+	}
+
+	:global(.animate-caret-pop) {
+		animation: caret-pop 100ms ease;
+	}
+
+	:global(.animate-caret-blink.animate-caret-pop) {
+		animation:
+			caret-pop 100ms ease,
+			caret-blink 2s ease infinite alternate;
+	}
+
+	:global(.tiptap::selection) {
+		background-color: var(--color-primary);
+		color: var(--color-primary-fg);
+	}
+
+	@layer base {
+		:global(p.is-editor-empty:first-child::before) {
+			color: color-mix(in oklch, var(--color-base-fg) 40%, transparent);
+			content: attr(data-placeholder);
+			float: left;
+			height: 0;
+			pointer-events: none;
+		}
+	}
+</style>

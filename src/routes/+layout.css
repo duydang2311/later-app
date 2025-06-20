@@ -1,0 +1,49 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+@theme {
+	--font-sans: Inter, system-ui, sans-serif;
+	--font-playful: 'Playpen Sans', var(--font-sans);
+
+	--default-transition-duration: 100ms;
+
+	--color-base: white;
+	--color-base-fg: black;
+	--color-base-variant: white;
+
+	--color-primary: blue;
+	--color-primary-fg: black;
+
+	--color-secondary: lightblue;
+	--color-secondary-fg: black;
+	--color-secondary-container: lightblue;
+	--color-secondary-container-fg: black;
+
+	--color-tertiary: lightgreen;
+	--color-tertiary-fg: black;
+	--color-tertiary-container: lightgreen;
+	--color-tertiary-container-fg: black;
+
+	--color-negative: red;
+	--color-negative-fg: white;
+	--color-negative-container: darkred;
+	--color-negative-container-fg: white;
+}
+
+@theme inline {
+	--default-font-family: var(--font-sans);
+}
+
+@layer base {
+	body {
+		color: var(--color-base-fg);
+		line-height: 1.5;
+	}
+}
+
+@utility scrollbar-hidden {
+	&::-webkit-scrollbar {
+		display: none;
+	}
+}

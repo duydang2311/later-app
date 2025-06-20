@@ -4,7 +4,7 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "my-svelte-app",
+	"name": "later-app",
 	"compatibility_date": "2025-06-19",
 	"pages_build_output_dir": ".svelte-kit/cloudflare",
 	"observability": {
