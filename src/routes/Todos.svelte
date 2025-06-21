@@ -2,6 +2,8 @@
 	import { browser } from '$app/environment';
 	import { Indexes } from '$lib/services/db';
 	import { useRuntime } from '$lib/services/runtime';
+	import { logError } from '$lib/utils';
+	import { attempt } from '@duydang2311/attempt';
 	import { Check, X } from '@lucide/svelte';
 
 	let todos = $state.raw<{ id: string; content: string; completed: boolean }[]>([]);
@@ -9,53 +11,68 @@
 	const { db } = useRuntime();
 
 	export const invalidate = async () => {
-		const store = await db.objectStore('todos', 'readonly');
-		const index = store.index(Indexes.byDateAndTimestamp);
+		const openTx = await db.transaction('todos', 'readonly');
+		if (openTx.failed) {
+			logError('Failed to open transaction for todos')(openTx.error);
+			return;
+		}
+		const index = openTx.data.store.index(Indexes.byDateAndTimestamp);
 		const now = new Date();
 		const date = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
-		const request = index.getAll(IDBKeyRange.bound([date, 0], [date, Number.POSITIVE_INFINITY]));
-		request.onsuccess = (e) => {
-			todos = (e.target as IDBRequest<any[]>).result.map((a) => ({
-				id: a.id,
-				content: a.value.content,
-				completed: a.value.completed || false,
-			}));
-		};
-		request.onerror = () => {
-			console.error('Failed to fetch todos:', request.error);
-		};
+		const getTodos = await attempt.async(() =>
+			index.getAll(IDBKeyRange.bound([date, 0], [date, Number.POSITIVE_INFINITY]))
+		)(logError('Failed to get todos from DB'));
+		if (getTodos.failed) {
+			return;
+		}
+
+		todos = getTodos.data.map((a) => ({
+			id: a.id,
+			content: a.content,
+			completed: a.completed,
+		}));
 	};
 
 	const deleteTodo = async (id: string) => {
-		const store = await db.objectStore('todos', 'readwrite');
-		store.delete(id);
+		const openTx = await db.transaction('todos', 'readwrite');
+		if (openTx.failed) {
+			logError('Failed to open transaction for todos')(openTx.error);
+			return;
+		}
+
+		await attempt.async(() => openTx.data.store.delete(id))(
+			logError('Failed to delete todo from DB')
+		);
+		await attempt.async(() => openTx.data.done)(
+			logError('Failed to commit transaction for deleting todo')
+		);
 		await invalidate();
 	};
 
 	const setComplete = async (id: string, value: boolean) => {
-		const store = await db.objectStore('todos', 'readwrite');
-		await new Promise((resolve, reject) => {
-			const request = store.get(id);
-			request.onsuccess = async (e) => {
-				const todo = (e.target as IDBRequest<any>).result;
-				if (!todo) {
-					reject(new Error('Todo not found'));
-					return;
-				}
-				todo.value.completed = value;
-				const putReq = store.put(todo);
-				putReq.onsuccess = () => {
-					resolve(todo);
-				};
-				putReq.onerror = () => {
-					reject(putReq.error);
-				};
-				resolve(todo);
-			};
-			request.onerror = () => {
-				reject(request.error);
-			};
-		});
+		const openTx = await db.transaction('todos', 'readwrite');
+		if (openTx.failed) {
+			logError('Failed to open transaction for todos')(openTx.error);
+			return;
+		}
+
+		const getTodo = await attempt.async(() => openTx.data.store.get(id))(
+			logError('Failed to get todo from DB')
+		);
+		if (getTodo.failed) {
+			return;
+		}
+		if (!getTodo.data) {
+			logError('Todo not found')(id);
+			return;
+		}
+
+		await attempt.async(() => openTx.data.store.put({ ...getTodo.data!, completed: value }))(
+			logError('Failed to update todo in DB')
+		);
+		await attempt.async(() => openTx.data.done)(
+			logError('Failed to commit transaction for updating todo')
+		);
 		await invalidate();
 	};
 

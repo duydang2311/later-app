@@ -1,130 +1,138 @@
+import { ErrorCodes, type ErrorCode } from '$lib/constants/errors';
+import { attempt, type Attempt } from '@duydang2311/attempt';
+import {
+	deleteDB,
+	openDB,
+	type DBSchema,
+	type IDBPDatabase,
+	type IDBPTransaction,
+	type StoreNames,
+} from 'idb';
+
 export interface Db {
-	objectStore(name: string, mode: IDBTransactionMode): Promise<IDBObjectStore>;
-	get<T>(objectStore: string, key: string): Promise<Entry<T> | undefined>;
-	getAll<T>(objectStore: string): Promise<Entry<T>[]>;
-	put<T>(objectStore: string, entry: Entry<T>): Promise<void>;
+	transaction<
+		Name extends StoreNames<IndexedDbSchema>,
+		Mode extends IDBTransactionMode = 'readonly',
+	>(
+		storeNames: Name,
+		mode?: Mode,
+		options?: IDBTransactionOptions
+	): Promise<Attempt<IDBPTransaction<IndexedDbSchema, [Name], Mode>, ErrorCode['DB_OPEN_FAILED']>>;
+	transaction<
+		Names extends ArrayLike<StoreNames<IndexedDbSchema>>,
+		Mode extends IDBTransactionMode = 'readonly',
+	>(
+		storeNames: Names,
+		mode?: Mode,
+		options?: IDBTransactionOptions
+	): Promise<Attempt<IDBPTransaction<IndexedDbSchema, Names, Mode>, ErrorCode['DB_OPEN_FAILED']>>;
+	getDb(): Promise<Attempt<IDBPDatabase<IndexedDbSchema>, ErrorCode['DB_OPEN_FAILED']>>;
 }
 
-interface Entry<T> {
-	id: string;
-	value: T;
+interface IndexedDbSchema extends DBSchema {
+	preferences:
+		| {
+				key: 'bg';
+				value: File;
+		  }
+		| {
+				key: 'theme';
+				value: string;
+		  };
+	todos: {
+		key: string;
+		value: {
+			id: string;
+			date: string;
+			timestamp: number;
+			content: string;
+			completed: boolean;
+		};
+		indexes: { by_date_and_timestamp: [string, number] };
+	};
 }
 
 class IndexedDb implements Db {
-	#promise: Promise<IDBDatabase> | undefined;
-	#db: IDBDatabase | undefined;
+	#promise:
+		| Promise<Attempt<IDBPDatabase<IndexedDbSchema>, ErrorCode['DB_OPEN_FAILED']>>
+		| undefined;
+	#db: IDBPDatabase<IndexedDbSchema> | undefined;
 
-	public async objectStore(name: string, mode: IDBTransactionMode) {
-		const db = await this.getDb();
-		const tx = db.transaction(name, mode);
-		return tx.objectStore(name);
+	public async transaction<
+		Name extends StoreNames<IndexedDbSchema>,
+		Mode extends IDBTransactionMode = 'readonly',
+	>(
+		storeNames: Name,
+		mode?: Mode,
+		options?: IDBTransactionOptions
+	): Promise<Attempt<IDBPTransaction<IndexedDbSchema, [Name], Mode>, ErrorCode['DB_OPEN_FAILED']>>;
+	public async transaction<
+		Names extends ArrayLike<StoreNames<IndexedDbSchema>>,
+		Mode extends IDBTransactionMode = 'readonly',
+	>(
+		storeNames: Names,
+		mode?: Mode,
+		options?: IDBTransactionOptions
+	): Promise<Attempt<IDBPTransaction<IndexedDbSchema, Names, Mode>, ErrorCode['DB_OPEN_FAILED']>>;
+	public async transaction(
+		storeNames: StoreNames<IndexedDbSchema> | ArrayLike<StoreNames<IndexedDbSchema>>,
+		mode?: IDBTransactionMode,
+		options?: IDBTransactionOptions
+	): Promise<Attempt<IDBPTransaction<IndexedDbSchema, any, any>, ErrorCode['DB_OPEN_FAILED']>> {
+		return attempt.async(async () => {
+			const getDb = await this.getDb();
+			if (getDb.failed) {
+				return getDb;
+			}
+			return attempt.ok(getDb.data.transaction(storeNames as any, mode, options));
+		})((e) => e as never);
 	}
 
-	public async get<T>(objectStore: string, key: string) {
-		const store = await this.objectStore(objectStore, 'readonly');
-		const request = store.get(key);
-		return new Promise<Entry<T> | undefined>((resolve, reject) => {
-			request.onsuccess = () => {
-				resolve(request.result as Entry<T> | undefined);
-			};
-			request.onerror = () => {
-				reject(request.error);
-			};
-		});
-	}
-
-	public async getAll<T>(objectStore: string) {
-		const store = await this.objectStore(objectStore, 'readonly');
-		const request = store.getAll();
-		return new Promise<Entry<T>[]>((resolve, reject) => {
-			request.onsuccess = () => {
-				resolve(request.result as Entry<T>[]);
-			};
-			request.onerror = () => {
-				reject(request.error);
-			};
-		});
-	}
-
-	public async put<T>(objectStore: string, entry: Entry<T>) {
-		const store = await this.objectStore(objectStore, 'readwrite');
-		const request = store.put(entry);
-		return new Promise<void>((resolve, reject) => {
-			request.onsuccess = () => {
-				resolve();
-			};
-			request.onerror = () => {
-				reject(request.error);
-			};
-		});
-	}
-
-	private async getDb() {
+	public async getDb() {
 		if (this.#db) {
-			return this.#db;
+			this.#db.transaction;
+			return attempt.ok(this.#db);
 		}
 
-		if (this.#promise) {
-			return this.#promise;
-		}
-
-		this.#promise = new Promise<IDBDatabase>((resolve, reject) => {
-			const request = indexedDB.open('later-app', 6);
-
-			request.onupgradeneeded = (event) => {
-				const e = event.target as IDBOpenDBRequest;
-				const db = (event.target as IDBOpenDBRequest).result;
-				switch (event.oldVersion) {
-					case 0:
+		await deleteDB('later-app', {
+			blocked: () => {
+				console.error(
+					'Database deletion is blocked. Please close all other tabs using this database.'
+				);
+			},
+		});
+		this.#promise ??= attempt.async(() =>
+			openDB<IndexedDbSchema>('later-app', 1, {
+				upgrade: (db, oldVersion, _newVersion, transaction, _e) => {
+					if (oldVersion < 1) {
 						if (!db.objectStoreNames.contains('preferences')) {
-							db.createObjectStore('preferences', { keyPath: 'id' });
+							db.createObjectStore('preferences');
 						}
-					case 1:
 						if (!db.objectStoreNames.contains('todos')) {
 							db.createObjectStore('todos', { keyPath: 'id' });
 						}
-					case 2: {
-						const store = e.transaction!.objectStore('todos');
-						if (!Array.from(store.indexNames).includes(Indexes.byDate)) {
-							store.createIndex(Indexes.byDate, 'date', { unique: false });
-						}
+						const todosStore = transaction.objectStore('todos');
+						todosStore.createIndex(Indexes.byDateAndTimestamp, ['date', 'timestamp'], {
+							unique: false,
+						});
 					}
-					case 4: {
-						const store = e.transaction!.objectStore('todos');
-						store.deleteIndex(Indexes.byDate);
-						if (!Array.from(store.indexNames).includes(Indexes.byDate)) {
-							store.createIndex(Indexes.byDate, 'value.date', { unique: false });
-						}
-					}
-					case 5: {
-						const store = e.transaction!.objectStore('todos');
-						store.deleteIndex(Indexes.byDate);
-						if (!Array.from(store.indexNames).includes(Indexes.byDateAndTimestamp)) {
-							store.createIndex(Indexes.byDateAndTimestamp, ['value.date', 'value.timestamp'], {
-								unique: false,
-							});
-						}
-					}
-				}
-			};
-
-			request.onsuccess = (event) => {
-				this.#db = (event.target as IDBOpenDBRequest).result;
-				resolve(this.#db);
-			};
-
-			request.onerror = (event) => {
-				reject((event.target as IDBOpenDBRequest).error);
-			};
-		});
+				},
+			})
+				.then((a) => {
+					this.#db = a;
+					return a;
+				})
+				.finally(() => {
+					this.#promise = undefined;
+				})
+		)(ErrorCodes.DB_OPEN_FAILED);
 		return this.#promise;
 	}
 }
 
 export const Indexes = {
-	byDate: 'by_date',
 	byDateAndTimestamp: 'by_date_and_timestamp',
-};
+} as const;
 
 export const createIndexedDb = () => {
 	return new IndexedDb();

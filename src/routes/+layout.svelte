@@ -5,7 +5,6 @@
 	import ThemeSwitch from '$lib/components/ThemeSwitch.svelte';
 	import { createRef } from '$lib/runes/ref.svelte';
 	import { createIndexedDb } from '$lib/services/db';
-	import { applyTheme as __applyTheme } from '@material/material-color-utilities';
 	import { setRuntime } from '$lib/services/runtime';
 	import {
 		applyTheme,
@@ -13,7 +12,9 @@
 		getDominantArgb,
 		getUserPreferredColorScheme,
 		isDarkColorScheme,
+		logError,
 	} from '$lib/utils';
+	import { attempt } from '@duydang2311/attempt';
 	import type { Theme } from '@material/material-color-utilities';
 	import { onMount, type Snippet } from 'svelte';
 
@@ -39,17 +40,38 @@
 
 	onMount(() => {
 		(async () => {
-			const entry = await runtime.db.get<string>('preferences', 'theme');
-			if (entry) {
-				theme.current = JSON.parse(entry.value);
-				applyTheme(theme.current!, isDarkColorScheme(colorScheme.current));
+			const openTx = await runtime.db.transaction('preferences', 'readonly');
+			if (openTx.failed) {
+				logError('Failed to open transaction for preferences')(openTx.error);
+				return;
 			}
-		})();
-		(async () => {
-			const entry = await runtime.db.get<File>('preferences', 'bg');
-			if (entry) {
-				src = URL.createObjectURL(entry.value);
+
+			const tx = openTx.data;
+			const [getTheme, getBg] = await Promise.all([
+				attempt.async(() => tx.store.get('theme') as Promise<string | undefined>)(
+					logError('Failed to get theme from DB'),
+				),
+				attempt.async(() => tx.store.get('bg') as Promise<File | undefined>)(
+					logError('Failed to get bg from DB'),
+				),
+			]);
+
+			if (getBg.ok && getBg.data) {
+				src = URL.createObjectURL(getBg.data);
 			}
+			if (getTheme.failed || getTheme.data == null) {
+				return;
+			}
+
+			const parseTheme = attempt.sync(() => JSON.parse(getTheme.data!) as Theme)(
+				logError('Failed to parse theme from DB'),
+			);
+			if (parseTheme.failed) {
+				return;
+			}
+
+			theme.current = parseTheme.data;
+			applyTheme(parseTheme.data, isDarkColorScheme(colorScheme.current));
 		})();
 		return () => {
 			if (src) {
@@ -92,7 +114,7 @@
 	role="region"
 	aria-label="File drop zone"
 	class="relative w-[100dvw] h-[100dvh] flex flex-col overflow-auto"
-	ondrop={(e) => {
+	ondrop={async (e) => {
 		e.preventDefault();
 		if (!e.dataTransfer) {
 			return;
@@ -112,21 +134,36 @@
 
 		const img = new Image();
 		src = img.src = URL.createObjectURL(file);
-		runtime.db
-			.put('preferences', {
-				id: 'bg',
-				value: file,
-			})
-			.catch(console.error);
-		img.onload = () => {
+		const openTx = await runtime.db.transaction('preferences', 'readwrite');
+		if (openTx.failed) {
+			logError('Failed to open transaction for preferences')(openTx.error);
+			return;
+		}
+
+		await attempt.async(() => openTx.data.store.put(file, 'bg'))(
+			logError('Failed to put background image in DB'),
+		);
+		await attempt.async(() => openTx.data.done)(
+			logError('Failed to commit transaction for updating background image'),
+		);
+
+		img.onload = async () => {
 			const argb = getDominantArgb(img);
 			theme.current = generateThemeFromArgb(argb);
-			runtime.db
-				.put('preferences', {
-					id: 'theme',
-					value: JSON.stringify(theme.current),
-				})
-				.catch(console.error);
+
+			const openTx = await runtime.db.transaction('preferences', 'readwrite');
+			if (openTx.failed) {
+				logError('Failed to open transaction for preferences')(openTx.error);
+				return;
+			}
+
+			console.log('put theme in db');
+			await attempt.async(() => openTx.data.store.put(JSON.stringify(theme.current), 'theme'))(
+				logError('Failed to put theme in DB'),
+			);
+			await attempt.async(() => openTx.data.done)(
+				logError('Failed to commit transaction for updating theme'),
+			);
 			applyTheme(theme.current, isDarkColorScheme(colorScheme.current));
 			img.remove();
 		};

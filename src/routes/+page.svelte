@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { useRuntime } from '$lib/services/runtime';
-	import { getUserLocales } from '$lib/utils';
+	import { getUserLocales, logError } from '$lib/utils';
+	import { attempt } from '@duydang2311/attempt';
 	import { Editor, Extension } from '@tiptap/core';
 	import Document from '@tiptap/extension-document';
 	import Paragraph from '@tiptap/extension-paragraph';
@@ -69,15 +70,24 @@
 		updateCaret(editor);
 
 		const now = new Date();
-		await db.put('todos', {
-			id: crypto.randomUUID(),
-			value: {
+		const openTx = await db.transaction('todos', 'readwrite');
+		if (openTx.failed) {
+			console.error('Failed to open transaction for todos', openTx.error);
+			return;
+		}
+
+		await attempt.async(() =>
+			openTx.data.store.put({
+				id: crypto.randomUUID(),
 				timestamp: now.getTime(),
 				date: `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`,
 				content,
-			},
-		});
-
+				completed: false,
+			}),
+		)(logError('Failed to put todo in DB'));
+		await attempt.async(() => openTx.data.done)(
+			logError('Failed to commit transaction for adding todo'),
+		);
 		await todosHandle?.invalidate();
 	};
 

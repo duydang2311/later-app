@@ -121,3 +121,7 @@ export const isDarkColorScheme = (colorScheme: string) => {
 		(colorScheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
 	);
 };
+
+export const logError = (description: string) => (e: unknown) => {
+	console.error(`${description}: ${e}`);
+};
