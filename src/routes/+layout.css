@@ -8,27 +8,25 @@
 
 	--default-transition-duration: 100ms;
 
-	--color-base: white;
-	--color-base-fg: black;
-	--color-base-variant: white;
-
-	--color-primary: blue;
-	--color-primary-fg: black;
-
-	--color-secondary: lightblue;
-	--color-secondary-fg: black;
-	--color-secondary-container: lightblue;
-	--color-secondary-container-fg: black;
-
-	--color-tertiary: lightgreen;
-	--color-tertiary-fg: black;
-	--color-tertiary-container: lightgreen;
-	--color-tertiary-container-fg: black;
-
-	--color-negative: red;
-	--color-negative-fg: white;
-	--color-negative-container: darkred;
-	--color-negative-container-fg: white;
+	--color-base: #fbfcfe;
+	--color-base-fg: #191c1d;
+	--color-primary: #006780;
+	--color-primary-fg: #ffffff;
+	--color-primary-container: #b8eaff;
+	--color-primary-container-fg: #001f28;
+	--color-secondary: #4c626b;
+	--color-secondary-fg: #ffffff;
+	--color-secondary-container: #cfe6f1;
+	--color-secondary-container-fg: #071e26;
+	--color-base-variant: #dce4e8;
+	--color-tertiary: #5b5b7e;
+	--color-tertiary-fg: #ffffff;
+	--color-tertiary-container: #e1e0ff;
+	--color-tertiary-container-fg: #171837;
+	--color-negative: #ba1a1a;
+	--color-negative-fg: #ffffff;
+	--color-negative-container: #ffdad6;
+	--color-negative-container-fg: #410002;
 }
 
 @theme inline {
@@ -36,6 +34,29 @@
 }
 
 @layer base {
+	:root {
+		@variant dark {
+			--color-base: #191c1d;
+			--color-base-fg: #e1e3e4;
+			--color-primary: #5ed4fc;
+			--color-primary-fg: #003544;
+			--color-primary-container: #004d61;
+			--color-primary-container-fg: #b8eaff;
+			--color-secondary: #b3cad5;
+			--color-secondary-fg: #1e333c;
+			--color-secondary-container: #354a53;
+			--color-secondary-container-fg: #cfe6f1;
+			--color-base-variant: #40484c;
+			--color-tertiary: #c3c3eb;
+			--color-tertiary-fg: #2c2d4d;
+			--color-tertiary-container: #434465;
+			--color-tertiary-container-fg: #e1e0ff;
+			--color-negative: #ffb4ab;
+			--color-negative-fg: #690005;
+			--color-negative-container: #93000a;
+			--color-negative-container-fg: #ffb4ab;
+		}
+	}
 	body {
 		color: var(--color-base-fg);
 		line-height: 1.5;

@@ -34,8 +34,9 @@
 		let top = fromCoords.top + (fromCoords.bottom - fromCoords.top - caretHeight) / 2;
 		let left = fromCoords.left;
 
-		top -= window.visualViewport?.offsetTop ?? 0;
-		left -= window.visualViewport?.offsetLeft ?? 0;
+		top += (scrollEl.current?.scrollTop ?? 0) - (window.visualViewport?.offsetTop ?? 0);
+		left += (scrollEl.current?.scrollLeft ?? 0) - (window.visualViewport?.offsetLeft ?? 0);
+
 		springTop.set(top, {
 			instant,
 		});
@@ -108,13 +109,15 @@
 	});
 </script>
 
-<main class="relative grow mx-auto max-w-full flex flex-col justify-end gap-16">
-	<div class="max-sm:px-8">
+<main
+	class="flex-1 flex flex-col justify-end max-w-3xl w-full overflow-hidden min-h-128 mx-auto gap-16"
+>
+	<div class="px-8">
 		<p class="font-sm font-medium text-base-fg/40">
 			{Intl.DateTimeFormat(getUserLocales(), { dateStyle: 'medium' }).format(Date.now())}
 		</p>
 		<p class="font-sm font-medium text-base-fg lowercase">What might you do today?</p>
-		<div class="relative">
+		<div class="relative mt-1">
 			<div
 				{@attach (el) => {
 					editor = new Editor({
@@ -145,8 +148,7 @@
 						editorProps: {
 							attributes: {
 								spellcheck: 'false',
-								class:
-									'focus:outline-none font-playful max-w-full text-3xl caret-transparent text-base-fg',
+								class: 'focus:outline-none font-playful text-3xl caret-transparent text-base-fg',
 							},
 						},
 						onTransaction: ({ editor: e }) => {
@@ -169,19 +171,19 @@
 				</div>
 			{/if}
 		</div>
-		<div
-			bind:this={caretEl}
-			class={[
-				'fixed w-(--_width) text-3xl animate-caret-blink rounded-sm',
-				editor?.isEmpty ? 'bg-primary/40' : 'bg-primary',
-			]}
-			style="--_width: {springCaretWidth.current}px; height: {caretLh}lh; top: {springTop.current}px; left: {springLeft.current}px;"
-		></div>
 	</div>
-	<div bind:this={todosContainerEl}>
+	<div bind:this={todosContainerEl} class="flex flex-col max-h-full overflow-auto">
 		<Todos bind:this={todosHandle} />
 	</div>
 </main>
+<div
+	bind:this={caretEl}
+	class={[
+		'absolute w-(--_width) text-3xl animate-caret-blink rounded-sm',
+		editor?.isEmpty ? 'bg-primary/40' : 'bg-primary',
+	]}
+	style="--_width: {springCaretWidth.current}px; height: {caretLh}lh; top: {springTop.current}px; left: {springLeft.current}px;"
+></div>
 
 <style>
 	@keyframes caret-pop {

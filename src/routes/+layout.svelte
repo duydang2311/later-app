@@ -5,7 +5,7 @@
 	import ThemeSwitch from '$lib/components/ThemeSwitch.svelte';
 	import { createRef } from '$lib/runes/ref.svelte';
 	import { createIndexedDb } from '$lib/services/db';
-	import { applyTheme as __applyTheme } from '@material/material-color-utilities'
+	import { applyTheme as __applyTheme } from '@material/material-color-utilities';
 	import { setRuntime } from '$lib/services/runtime';
 	import {
 		applyTheme,
@@ -82,11 +82,16 @@
 	});
 </script>
 
+{#if src}
+	<img {src} alt="Background" class="fixed inset-0 w-full h-full object-cover object-center" />
+{/if}
+<div class="fixed inset-0 bg-base/95 dark:bg-base/80 backdrop-blur"></div>
+<div class="fixed inset-0 bg-radial from-transparent to-primary/20 from-70% dark:hidden"></div>
 <div
 	bind:this={scrollEl.current}
 	role="region"
 	aria-label="File drop zone"
-	class="relative w-screen h-screen overflow-auto bg-base"
+	class="relative w-[100dvw] h-[100dvh] flex flex-col overflow-auto"
 	ondrop={(e) => {
 		e.preventDefault();
 		if (!e.dataTransfer) {
@@ -144,17 +149,9 @@
 		e.dataTransfer.dropEffect = 'none';
 	}}
 >
-	{#if src}
-		<div>
-			<img {src} alt="Background" class="fixed inset-0 w-full h-full object-cover object-center" />
-			<div class="fixed inset-0 bg-base/95 dark:bg-base/80 backdrop-blur"></div>
-			<div
-				class="fixed inset-0 bg-radial from-transparent to-primary/20 from-70% dark:hidden"
-			></div>
-		</div>
-	{/if}
-	<div class="flex flex-col w-full h-full relative">
-		<div class="flex justify-end p-4">
+	<div class="relative flex-1 max-h-full flex flex-col">
+		<div class="flex justify-between p-4">
+			<span class="font-playful lowercase font-medium text-2xl">Later</span>
 			<ThemeSwitch />
 		</div>
 		{@render children()}
