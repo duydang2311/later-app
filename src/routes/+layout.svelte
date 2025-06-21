@@ -23,7 +23,7 @@
 	const scrollEl = createRef<HTMLElement>();
 	const theme = createRef<Theme>();
 	const colorScheme = createRef<'light' | 'dark' | 'system'>(
-		browser ? getUserPreferredColorScheme() : 'system',
+		browser ? getUserPreferredColorScheme() : 'system'
 	);
 	const db = createIndexedDb();
 	const runtime = setRuntime({
@@ -49,10 +49,10 @@
 			const tx = openTx.data;
 			const [getTheme, getBg] = await Promise.all([
 				attempt.async(() => tx.store.get('theme') as Promise<string | undefined>)(
-					logError('Failed to get theme from DB'),
+					logError('Failed to get theme from DB')
 				),
 				attempt.async(() => tx.store.get('bg') as Promise<File | undefined>)(
-					logError('Failed to get bg from DB'),
+					logError('Failed to get bg from DB')
 				),
 			]);
 
@@ -64,7 +64,7 @@
 			}
 
 			const parseTheme = attempt.sync(() => JSON.parse(getTheme.data!) as Theme)(
-				logError('Failed to parse theme from DB'),
+				logError('Failed to parse theme from DB')
 			);
 			if (parseTheme.failed) {
 				return;
@@ -121,7 +121,7 @@
 		}
 
 		const item = [...e.dataTransfer.items].find(
-			(item) => item.kind === 'file' && item.type.includes('image'),
+			(item) => item.kind === 'file' && item.type.includes('image')
 		);
 		const file = item?.getAsFile();
 		if (!file) {
@@ -134,22 +134,11 @@
 
 		const img = new Image();
 		src = img.src = URL.createObjectURL(file);
-		const openTx = await runtime.db.transaction('preferences', 'readwrite');
-		if (openTx.failed) {
-			logError('Failed to open transaction for preferences')(openTx.error);
-			return;
-		}
-
-		await attempt.async(() => openTx.data.store.put(file, 'bg'))(
-			logError('Failed to put background image in DB'),
-		);
-		await attempt.async(() => openTx.data.done)(
-			logError('Failed to commit transaction for updating background image'),
-		);
-
 		img.onload = async () => {
 			const argb = getDominantArgb(img);
 			theme.current = generateThemeFromArgb(argb);
+			console.log();
+			applyTheme(theme.current, isDarkColorScheme(colorScheme.current));
 
 			const openTx = await runtime.db.transaction('preferences', 'readwrite');
 			if (openTx.failed) {
@@ -157,16 +146,31 @@
 				return;
 			}
 
-			console.log('put theme in db');
-			await attempt.async(() => openTx.data.store.put(JSON.stringify(theme.current), 'theme'))(
-				logError('Failed to put theme in DB'),
-			);
-			await attempt.async(() => openTx.data.done)(
-				logError('Failed to commit transaction for updating theme'),
-			);
-			applyTheme(theme.current, isDarkColorScheme(colorScheme.current));
+			await Promise.all([
+				attempt.async(() => openTx.data.store.put(JSON.stringify(theme.current), 'theme'))(
+					logError('Failed to put theme in DB')
+				),
+				attempt.async(() => openTx.data.done)(
+					logError('Failed to commit transaction for updating theme')
+				),
+			]);
 			img.remove();
 		};
+
+		const openTx = await runtime.db.transaction('preferences', 'readwrite');
+		if (openTx.failed) {
+			logError('Failed to open transaction for preferences')(openTx.error);
+			return;
+		}
+
+		await Promise.all([
+			attempt.async(() => openTx.data.store.put(file, 'bg'))(
+				logError('Failed to put background image in DB')
+			),
+			attempt.async(() => openTx.data.done)(
+				logError('Failed to commit transaction for updating background image')
+			),
+		]);
 	}}
 	ondragover={(e) => {
 		if (e.dataTransfer == null) {

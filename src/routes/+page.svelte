@@ -76,18 +76,20 @@
 			return;
 		}
 
-		await attempt.async(() =>
-			openTx.data.store.put({
-				id: crypto.randomUUID(),
-				timestamp: now.getTime(),
-				date: `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`,
-				content,
-				completed: false,
-			}),
-		)(logError('Failed to put todo in DB'));
-		await attempt.async(() => openTx.data.done)(
-			logError('Failed to commit transaction for adding todo'),
-		);
+		await Promise.all([
+			attempt.async(() =>
+				openTx.data.store.put({
+					id: crypto.randomUUID(),
+					timestamp: now.getTime(),
+					date: `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`,
+					content,
+					completed: false,
+				})
+			)(logError('Failed to put todo in DB')),
+			attempt.async(() => openTx.data.done)(
+				logError('Failed to commit transaction for adding todo')
+			),
+		]);
 		await todosHandle?.invalidate();
 	};
 

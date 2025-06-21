@@ -40,12 +40,12 @@
 			return;
 		}
 
-		await attempt.async(() => openTx.data.store.delete(id))(
-			logError('Failed to delete todo from DB')
-		);
-		await attempt.async(() => openTx.data.done)(
-			logError('Failed to commit transaction for deleting todo')
-		);
+		await Promise.all([
+			attempt.async(() => openTx.data.store.delete(id))(logError('Failed to delete todo from DB')),
+			attempt.async(() => openTx.data.done)(
+				logError('Failed to commit transaction for deleting todo')
+			),
+		]);
 		await invalidate();
 	};
 
@@ -67,12 +67,14 @@
 			return;
 		}
 
-		await attempt.async(() => openTx.data.store.put({ ...getTodo.data!, completed: value }))(
-			logError('Failed to update todo in DB')
-		);
-		await attempt.async(() => openTx.data.done)(
-			logError('Failed to commit transaction for updating todo')
-		);
+		await Promise.all([
+			attempt.async(() => openTx.data.store.put({ ...getTodo.data!, completed: value }))(
+				logError('Failed to update todo in DB')
+			),
+			attempt.async(() => openTx.data.done)(
+				logError('Failed to commit transaction for updating todo')
+			),
+		]);
 		await invalidate();
 	};
 
