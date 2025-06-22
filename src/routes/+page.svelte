@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { useRuntime } from '$lib/services/runtime';
-	import { getUserLocales, logError } from '$lib/utils';
+	import { generateNanoId, getUserLocales, logError } from '$lib/utils';
 	import { attempt } from '@duydang2311/attempt';
 	import { Editor, Extension } from '@tiptap/core';
 	import Document from '@tiptap/extension-document';
 	import Paragraph from '@tiptap/extension-paragraph';
 	import Placeholder from '@tiptap/extension-placeholder';
 	import Text from '@tiptap/extension-text';
+	import slug from 'slug';
 	import { onMount } from 'svelte';
 	import { Spring } from 'svelte/motion';
 	import Todos from './Todos.svelte';
@@ -67,7 +68,7 @@
 		if (editor.isEmpty) {
 			return;
 		}
-		const content = editor.getText();
+		const title = editor.getText();
 		editor.commands.clearContent();
 		updateCaret(editor);
 
@@ -82,9 +83,11 @@
 			attempt.async(() =>
 				openTx.data.store.put({
 					id: crypto.randomUUID(),
+					publicId: generateNanoId(),
 					timestamp: now.getTime(),
 					date: `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`,
-					content,
+					title,
+					slug: slug(title),
 					completed: false,
 				})
 			)(logError('Failed to put todo in DB')),

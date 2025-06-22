@@ -2,15 +2,14 @@
 	import './+layout.css';
 
 	import { browser } from '$app/environment';
+	import { onNavigate } from '$app/navigation';
 	import ThemeSwitch from '$lib/components/ThemeSwitch.svelte';
 	import { createRef } from '$lib/runes/ref.svelte';
-	import { createIndexedDb } from '$lib/services/db';
 	import { setRuntime } from '$lib/services/runtime';
 	import {
 		applyTheme,
 		generateThemeFromArgb,
 		getDominantArgb,
-		getUserPreferredColorScheme,
 		isDarkColorScheme,
 		logError,
 	} from '$lib/utils';
@@ -18,67 +17,47 @@
 	import { Github } from '@lucide/svelte';
 	import type { Theme } from '@material/material-color-utilities';
 	import { onMount, type Snippet } from 'svelte';
+	import type { LayoutData } from './$types';
 
-	const { children }: { children: Snippet } = $props();
+	const { data, children }: { data: LayoutData; children: Snippet } = $props();
 
 	const scrollEl = createRef<HTMLElement>();
-	const theme = createRef<Theme>();
-	const colorScheme = createRef<'light' | 'dark' | 'system'>(
-		browser ? getUserPreferredColorScheme() : 'system'
-	);
-	const db = createIndexedDb();
+	const theme = createRef<Theme | undefined>(data.theme);
+	const colorScheme = createRef<'light' | 'dark' | 'system'>(data.colorScheme);
 	const runtime = setRuntime({
-		db,
+		db: data.db,
 		scrollEl,
 		theme,
 		colorScheme,
 	});
-	let src = $state.raw<string>();
+	let src = $state.raw<string | undefined>(data.bg ? URL.createObjectURL(data.bg) : undefined);
 
-	if (browser && isDarkColorScheme(colorScheme.current)) {
+	if (isDarkColorScheme(colorScheme.current)) {
 		document.documentElement.setAttribute('data-theme', 'dark');
+	}
+	if (data.theme) {
+		applyTheme(data.theme, isDarkColorScheme(colorScheme.current));
 	}
 
 	onMount(() => {
-		(async () => {
-			const openTx = await runtime.db.transaction('preferences', 'readonly');
-			if (openTx.failed) {
-				logError('Failed to open transaction for preferences')(openTx.error);
-				return;
-			}
-
-			const tx = openTx.data;
-			const [getTheme, getBg] = await Promise.all([
-				attempt.async(() => tx.store.get('theme') as Promise<string | undefined>)(
-					logError('Failed to get theme from DB')
-				),
-				attempt.async(() => tx.store.get('bg') as Promise<File | undefined>)(
-					logError('Failed to get bg from DB')
-				),
-			]);
-
-			if (getBg.ok && getBg.data) {
-				src = URL.createObjectURL(getBg.data);
-			}
-			if (getTheme.failed || getTheme.data == null) {
-				return;
-			}
-
-			const parseTheme = attempt.sync(() => JSON.parse(getTheme.data!) as Theme)(
-				logError('Failed to parse theme from DB')
-			);
-			if (parseTheme.failed) {
-				return;
-			}
-
-			theme.current = parseTheme.data;
-			applyTheme(parseTheme.data, isDarkColorScheme(colorScheme.current));
-		})();
 		return () => {
 			if (src) {
 				URL.revokeObjectURL(src);
 			}
 		};
+	});
+
+	onNavigate((navigation) => {
+		if (!document.startViewTransition) {
+			return;
+		}
+
+		return new Promise((resolve) => {
+			document.startViewTransition(async () => {
+				resolve();
+				await navigation.complete;
+			});
+		});
 	});
 
 	$effect(() => {

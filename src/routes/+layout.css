@@ -62,9 +62,23 @@
 			--color-negative-container-fg: #ffb4ab;
 		}
 	}
+
 	body {
 		color: var(--color-base-fg);
 		line-height: 1.5;
+	}
+
+	::view-transition-group(*) {
+		animation-timing-function: ease-in-out;
+		animation-duration: 0.2s;
+	}
+
+	@media (prefers-reduced-motion) {
+		::view-transition-group(*),
+		::view-transition-old(*),
+		::view-transition-new(*) {
+			animation: none !important;
+		}
 	}
 }
 

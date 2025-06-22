@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
+	import type { Todo } from '$lib/models/todo';
 	import { Indexes } from '$lib/services/db';
 	import { useRuntime } from '$lib/services/runtime';
 	import { logError } from '$lib/utils';
@@ -7,7 +8,7 @@
 	import { attempt } from '@duydang2311/attempt';
 	import { X } from '@lucide/svelte';
 
-	let todos = $state.raw<{ id: string; content: string; completed: boolean }[]>([]);
+	let todos = $state.raw<Todo[]>([]);
 
 	const { db } = useRuntime();
 
@@ -27,11 +28,7 @@
 			return;
 		}
 
-		todos = getTodos.data.map((a) => ({
-			id: a.id,
-			content: a.content,
-			completed: a.completed,
-		}));
+		todos = getTodos.data;
 	};
 
 	const deleteTodo = async (id: string) => {
@@ -153,14 +150,15 @@
 								}}
 							/>
 						</div>
-						<span
+						<a
+						href="/todos/{todo.publicId}-{todo.slug}"
 							class={[
-								'transition',
+								'transition [view-transition-name:todo-title] w-fit',
 								todo.completed ? 'text-primary font-medium' : 'group-hover:text-primary/60',
 							]}
 						>
-							{todo.content}
-						</span>
+							{todo.title}
+							</a>
 					</div>
 					<button
 						type="button"

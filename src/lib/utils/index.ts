@@ -1,5 +1,6 @@
 import { hexFromArgb, themeFromSourceColor, type Theme } from '@material/material-color-utilities';
 import ColorThief from 'colorthief';
+import { nanoid } from 'nanoid';
 
 let colorThief: ColorThief;
 
@@ -134,4 +135,8 @@ export const isDarkColorScheme = (colorScheme: string) => {
 
 export const logError = (description: string) => (e: unknown) => {
 	console.error(`${description}: ${e}`);
+};
+
+export const generateNanoId = (size: number = 12) => {
+	return nanoid(size);
 };

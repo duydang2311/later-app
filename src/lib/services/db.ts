@@ -1,4 +1,5 @@
 import { ErrorCodes, type ErrorCode } from '$lib/constants/errors';
+import type { Todo } from '$lib/models/todo';
 import { attempt, type Attempt } from '@duydang2311/attempt';
 import {
 	deleteDB,
@@ -41,14 +42,8 @@ interface IndexedDbSchema extends DBSchema {
 		  };
 	todos: {
 		key: string;
-		value: {
-			id: string;
-			date: string;
-			timestamp: number;
-			content: string;
-			completed: boolean;
-		};
-		indexes: { by_date_and_timestamp: [string, number] };
+		value: Todo;
+		indexes: { by_public_id: string; by_date_and_timestamp: [string, number] };
 	};
 }
 
@@ -94,13 +89,13 @@ class IndexedDb implements Db {
 			return attempt.ok(this.#db);
 		}
 
-		await deleteDB('later-app', {
-			blocked: () => {
-				console.error(
-					'Database deletion is blocked. Please close all other tabs using this database.'
-				);
-			},
-		});
+		// await deleteDB('later-app', {
+		// 	blocked: () => {
+		// 		console.error(
+		// 			'Database deletion is blocked. Please close all other tabs using this database.'
+		// 		);
+		// 	},
+		// });
 		this.#promise ??= attempt.async(() =>
 			openDB<IndexedDbSchema>('later-app', 1, {
 				upgrade: (db, oldVersion, _newVersion, transaction, _e) => {
@@ -114,6 +109,9 @@ class IndexedDb implements Db {
 						const todosStore = transaction.objectStore('todos');
 						todosStore.createIndex(Indexes.byDateAndTimestamp, ['date', 'timestamp'], {
 							unique: false,
+						});
+						todosStore.createIndex(Indexes.byPublicId, 'publicId', {
+							unique: true,
 						});
 					}
 				},
@@ -132,6 +130,7 @@ class IndexedDb implements Db {
 
 export const Indexes = {
 	byDateAndTimestamp: 'by_date_and_timestamp',
+	byPublicId: 'by_public_id',
 } as const;
 
 export const createIndexedDb = () => {
