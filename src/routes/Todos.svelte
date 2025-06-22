@@ -3,8 +3,9 @@
 	import { Indexes } from '$lib/services/db';
 	import { useRuntime } from '$lib/services/runtime';
 	import { logError } from '$lib/utils';
+	import { tsap } from '$lib/utils/transitions';
 	import { attempt } from '@duydang2311/attempt';
-	import { Check, X } from '@lucide/svelte';
+	import { X } from '@lucide/svelte';
 
 	let todos = $state.raw<{ id: string; content: string; completed: boolean }[]>([]);
 
@@ -92,25 +93,65 @@
 	{:else}
 		<ul class="grid grid-cols-[1fr_auto] max-h-full flex-1 overflow-auto px-4">
 			{#each todos as todo (todo.id)}
-				<li class="col-span-full grid-cols-subgrid grid items-center gap-4 group relative">
-					<button
-						type="button"
-						onclick={() => {
-							setComplete(todo.id, !todo.completed);
-						}}
-						class="rounded-sm transition flex items-center gap-4 py-2 wrap-anywhere text-left"
-					>
-						<div
-							class={[
-								'group rounded-sm border transition size-4',
-								todo.completed
-									? 'bg-primary text-primary-fg border-primary/40'
-									: 'bg-secondary-container-fg/20 text-secondary-container border-secondary-container-fg/5 group-hover:bg-primary/40',
-							]}
-						>
+				<li class="col-span-full grid-cols-subgrid grid items-center gap-4 relative">
+					<div class="transition flex items-center py-2 gap-2 wrap-anywhere text-left">
+						<div class={['group flex items-center justify-center relative']}>
+							<div
+								class={[
+									'absolute size-4 border border-outline rounded-xs',
+									todo.completed
+										? 'bg-primary text-primary-fg border-primary/40'
+										: 'bg-transparent text-secondary-container border-base-variant-fg group-hover:bg-primary/20',
+								]}
+							></div>
 							{#if todo.completed}
-								<Check class="size-full" />
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									width="100%"
+									height="100%"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									class="absolute inset-0 size-4 text-primary-fg top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+								>
+									<path
+										d="M20 6 9 17l-5-5"
+										in:tsap={(node, gsap) => {
+											const path = node as SVGPathElement;
+											const length = path.getTotalLength();
+											return gsap.fromTo(
+												node,
+												{ strokeDashoffset: -length + 1, strokeDasharray: length },
+												{
+													strokeDashoffset: 0,
+												}
+											);
+										}}
+										out:tsap={(node, gsap) => {
+											const path = node as SVGPathElement;
+											const length = path.getTotalLength();
+											return gsap.fromTo(
+												node,
+												{
+													strokeDasharray: length,
+													strokeDashoffset: 0,
+												},
+												{ strokeDashoffset: -length + 1 }
+											);
+										}}
+									></path>
+								</svg>
 							{/if}
+							<input
+								type="checkbox"
+								class="relative appearance-none size-8 hover:bg-primary/5 rounded"
+								onchange={(e) => {
+									setComplete(todo.id, e.currentTarget.checked);
+								}}
+							/>
 						</div>
 						<span
 							class={[
@@ -120,13 +161,13 @@
 						>
 							{todo.content}
 						</span>
-					</button>
+					</div>
 					<button
 						type="button"
 						onclick={() => {
 							deleteTodo(todo.id);
 						}}
-						class="text-negative size-4"
+						class="c-button c-button--negative size-6 p-1"
 					>
 						<X class="size-full" />
 					</button>

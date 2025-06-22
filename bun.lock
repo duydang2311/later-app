@@ -5,6 +5,7 @@
       "name": "later-app",
       "devDependencies": {
         "@duydang2311/attempt": "^0.0.8",
+        "@duydang2311/svutils": "^0.0.3",
         "@eslint/compat": "^1.3.0",
         "@eslint/js": "^9.29.0",
         "@lucide/svelte": "^0.522.0",
@@ -62,6 +63,8 @@
     "@cspotcode/source-map-support": ["@cspotcode/source-map-support@0.8.1", "", { "dependencies": { "@jridgewell/trace-mapping": "0.3.9" } }, "sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw=="],
 
     "@duydang2311/attempt": ["@duydang2311/attempt@0.0.8", "", { "dependencies": { "@duydang2311/attempt": "." }, "peerDependencies": { "typescript": "^5" } }, "sha512-Eq0FeJC1c8S0Y/kJPn8cHWCGAHZx5iojvLk5glMmNUm4wyQ5FHMcl+KK1na4vqtMvwl+zD7O/yF38Hb6Zs63bQ=="],
+
+    "@duydang2311/svutils": ["@duydang2311/svutils@0.0.3", "", { "peerDependencies": { "gsap": "^3.13.0", "svelte": "^5.34.7", "typescript": "^5" } }, "sha512-ghy46AMvFhW49Or0dlmb3+W0f38P9ST73QfpNyaWJhBNqL0VuB6k7Rx6/l/uG1l9g0qP9TyDMOp28phlVz3wBg=="],
 
     "@emnapi/runtime": ["@emnapi/runtime@1.4.3", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-pBPWdu6MLKROBX05wSNKcNb++m5Er+KQ9QkB+WVM+pW2Kx9hoSrVTnu3BdkI5eBLZoKu/J6mW/B6i6bJB2ytXQ=="],
 

@@ -2,7 +2,7 @@
 	import { browser } from '$app/environment';
 	import { useRuntime } from '$lib/services/runtime';
 	import { applyTheme, isDarkColorScheme } from '$lib/utils';
-	import { gsap } from 'gsap';
+	import { gsap } from '$lib/utils/transitions';
 	import MorphSVGPlugin from 'gsap/dist/MorphSVGPlugin';
 
 	const { theme, colorScheme } = useRuntime();
@@ -74,7 +74,13 @@
 	});
 </script>
 
-<button type="button" aria-label="Toggle theme" onclick={onClick} class="size-6">
+<button
+	type="button"
+	aria-label="Toggle theme"
+	title="Toggle theme"
+	class="c-button size-6"
+	onclick={onClick}
+>
 	<svg
 		id="icon"
 		viewBox="0 0 24 24"

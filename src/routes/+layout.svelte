@@ -15,6 +15,7 @@
 		logError,
 	} from '$lib/utils';
 	import { attempt } from '@duydang2311/attempt';
+	import { Github } from '@lucide/svelte';
 	import type { Theme } from '@material/material-color-utilities';
 	import { onMount, type Snippet } from 'svelte';
 
@@ -137,7 +138,6 @@
 		img.onload = async () => {
 			const argb = getDominantArgb(img);
 			theme.current = generateThemeFromArgb(argb);
-			console.log();
 			applyTheme(theme.current, isDarkColorScheme(colorScheme.current));
 
 			const openTx = await runtime.db.transaction('preferences', 'readwrite');
@@ -191,9 +191,19 @@
 	}}
 >
 	<div class="relative flex-1 max-h-full flex flex-col">
-		<div class="flex justify-between p-4">
+		<div class="flex justify-between p-4 gap-8">
 			<span class="font-playful lowercase font-medium text-2xl">Later</span>
-			<ThemeSwitch />
+			<div class="flex gap-4">
+				<ThemeSwitch />
+				<a
+					href="https://github.com/duydang2311/later-app"
+					aria-label="Github"
+					target="_blank"
+					title="Open Github"
+				>
+					<Github />
+				</a>
+			</div>
 		</div>
 		{@render children()}
 	</div>

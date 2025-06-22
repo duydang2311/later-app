@@ -1,5 +1,7 @@
 @import 'tailwindcss';
 
+@import '$lib/stylesheets/c-button.css' layer(components);
+
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 @theme {
@@ -10,6 +12,8 @@
 
 	--color-base: #fbfcfe;
 	--color-base-fg: #191c1d;
+	--color-base-variant: #dce4e8;
+	--color-base-variant-fg: #dce4e8;
 	--color-primary: #006780;
 	--color-primary-fg: #ffffff;
 	--color-primary-container: #b8eaff;
@@ -18,7 +22,6 @@
 	--color-secondary-fg: #ffffff;
 	--color-secondary-container: #cfe6f1;
 	--color-secondary-container-fg: #071e26;
-	--color-base-variant: #dce4e8;
 	--color-tertiary: #5b5b7e;
 	--color-tertiary-fg: #ffffff;
 	--color-tertiary-container: #e1e0ff;
@@ -27,6 +30,8 @@
 	--color-negative-fg: #ffffff;
 	--color-negative-container: #ffdad6;
 	--color-negative-container-fg: #410002;
+	--color-outline: #8c9599;
+	--color-outline-variant: #191c1d;
 }
 
 @theme inline {

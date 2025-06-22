@@ -1,0 +1,40 @@
+.c-button {
+	--_text: var(--color-base-fg);
+	--_text-hover: color-mix(in oklch, var(--color-base) 40%, var(--color-base-fg));
+	--_bg: transparent;
+	--_bg-hover: transparent;
+	&:where(.c-button--filled) {
+		--_text: var(--color-base-fg);
+		--_bg: var(--color-base-container);
+		--_bg-hover: color-mix(
+			in oklch,
+			var(--color-base-container-fg) 8%,
+			var(--color-base-container)
+		);
+	}
+}
+
+.c-button--negative {
+	--_text: var(--color-negative);
+	--_text-hover: color-mix(in oklch, var(--color-negative-fg) 40%, var(--color-negative));
+	--_bg: transparent;
+	--_bg-hover: transparent;
+	&:where(.c-button--filled) {
+		--_text: var(--color-negative);
+		--_bg: var(--color-negative-container);
+		--_bg-hover: color-mix(
+			in oklch,
+			var(--color-negative-container-fg) 8%,
+			var(--color-negative-container)
+		);
+	}
+}
+
+.c-button {
+	color: var(--_text);
+	background-color: var(--_bg);
+	&:where(:hover) {
+		color: var(--_text-hover);
+		background-color: var(--_bg-hover);
+	}
+}

@@ -16,7 +16,7 @@
 	let blinkTimeout = 0;
 	let caretHeight: number | undefined;
 	let editor = $state.raw<Editor>();
-	let springCaretWidth = new Spring(16, { damping: 0.9, stiffness: 0.8 });
+	let springCaretWidth = new Spring(16, { damping: 0.6, stiffness: 0.3 });
 	let todosHandle = $state.raw<Todos>();
 	let todosContainerEl = $state.raw<HTMLDivElement>();
 	const springTop = new Spring(0, { damping: 0.6, stiffness: 0.2 });
@@ -57,7 +57,9 @@
 		}
 		blinkTimeout = setTimeout(() => {
 			caretEl?.classList.remove('animate-caret-pop');
-			caretEl?.classList.add('animate-caret-blink');
+			if (editor.isFocused) {
+				caretEl?.classList.add('animate-caret-blink');
+			}
 		}, 400);
 	};
 
@@ -72,7 +74,7 @@
 		const now = new Date();
 		const openTx = await db.transaction('todos', 'readwrite');
 		if (openTx.failed) {
-			console.error('Failed to open transaction for todos', openTx.error);
+			logError('Failed to open transaction for todos')(openTx.error);
 			return;
 		}
 
@@ -191,8 +193,8 @@
 <div
 	bind:this={caretEl}
 	class={[
-		'absolute w-(--_width) text-3xl animate-caret-blink rounded-sm',
-		editor?.isEmpty ? 'bg-primary/40' : 'bg-primary',
+		'absolute w-(--_width) text-3xl rounded-sm transition-colors',
+		editor?.isFocused ? 'bg-primary animate-caret-blink' : 'bg-transparent',
 	]}
 	style="--_width: {springCaretWidth.current}px; height: {caretLh}lh; top: {springTop.current}px; left: {springLeft.current}px;"
 ></div>
@@ -224,18 +226,15 @@
 			opacity: 1;
 		}
 		60% {
-			opacity: 1;
-		}
-		80% {
 			opacity: 0.4;
 		}
-		100% {
+		80% {
 			opacity: 1;
 		}
 	}
 
 	.animate-caret-blink {
-		animation: caret-blink 2s ease infinite alternate;
+		animation: caret-blink 3s ease infinite;
 	}
 
 	:global(.animate-caret-pop) {
@@ -245,7 +244,7 @@
 	:global(.animate-caret-blink.animate-caret-pop) {
 		animation:
 			caret-pop 100ms ease,
-			caret-blink 2s ease infinite alternate;
+			caret-blink 3s ease infinite alternate;
 	}
 
 	:global(.tiptap::selection) {
