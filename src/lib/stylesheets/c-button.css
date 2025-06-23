@@ -2,7 +2,7 @@
 	--_text: var(--color-base-fg);
 	--_text-hover: color-mix(in oklch, var(--color-base) 40%, var(--color-base-fg));
 	--_bg: transparent;
-	--_bg-hover: transparent;
+	--_bg-hover: color-mix(in oklch, var(--color-base-fg) 10%, transparent);
 	&:where(.c-button--filled) {
 		--_text: var(--color-base-fg);
 		--_bg: var(--color-base-container);
@@ -18,7 +18,7 @@
 	--_text: var(--color-negative);
 	--_text-hover: color-mix(in oklch, var(--color-negative-fg) 40%, var(--color-negative));
 	--_bg: transparent;
-	--_bg-hover: transparent;
+	--_bg-hover: color-mix(in oklch, var(--color-negative) 10%, transparent);
 	&:where(.c-button--filled) {
 		--_text: var(--color-negative);
 		--_bg: var(--color-negative-container);
@@ -30,6 +30,26 @@
 	}
 }
 
+.c-button--secondary {
+	--_text: var(--color-secondary-container-fg);
+	--_text-hover: color-mix(
+		in oklch,
+		var(--color-secondary-container) 20%,
+		var(--color-secondary-container-fg)
+	);
+	--_bg: transparent;
+	--_bg-hover: color-mix(in oklch, var(--color-secondary-container-fg) 10%, transparent);
+	&:where(.c-button--filled) {
+		--_text: var(--color-secondary-container-fg);
+		--_bg: var(--color-secondary-container);
+		--_bg-hover: color-mix(
+			in oklch,
+			var(--color-secondary-container-fg) 8%,
+			var(--color-secondary-container)
+		);
+	}
+}
+
 .c-button {
 	color: var(--_text);
 	background-color: var(--_bg);
@@ -37,4 +57,9 @@
 		color: var(--_text-hover);
 		background-color: var(--_bg-hover);
 	}
+
+	border-radius: var(--radius-sm);
+	transition-property: color, background-color;
+	transition-duration: 75ms;
+	transition-timing-function: ease;
 }

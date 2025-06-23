@@ -79,13 +79,14 @@
 </script>
 
 <div
-	class="font-playful bg-secondary-container py-4 border border-secondary-container-fg/2 border-b-0 max-h-full overflow-hidden flex flex-col rounded-t-sm"
+	class="font-playful bg-secondary-container py-4 border border-secondary-container-fg/2 border-b-0 max-h-full overflow-hidden flex flex-col rounded-t-sm
+	lg:w-2xl lg:h-full"
 >
 	<h2 class="text-secondary-container-fg text-2xl mb-4 lowercase font-medium px-4">Todos</h2>
 	{#if todos.length === 0}
 		<p class="text-secondary-container-fg/70 px-4 lowercase">Nothing for now. Maybe later.</p>
 	{:else}
-		<ul class="grid grid-cols-[1fr_auto] max-h-full flex-1 overflow-auto px-4">
+		<ul class="grid grid-cols-[1fr_auto] max-h-full overflow-auto px-4">
 			{#each todos as todo (todo.id)}
 				<li class="col-span-full grid-cols-subgrid grid items-center gap-4 relative">
 					<div class="transition flex items-center py-2 gap-2 wrap-anywhere text-left">

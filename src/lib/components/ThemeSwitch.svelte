@@ -5,6 +5,7 @@
 	import { gsap } from '$lib/utils/transitions';
 	import MorphSVGPlugin from 'gsap/dist/MorphSVGPlugin';
 
+	const { buttonClass }: { buttonClass?: string } = $props();
 	const { theme, colorScheme } = useRuntime();
 
 	if (browser) {
@@ -78,7 +79,7 @@
 	type="button"
 	aria-label="Toggle theme"
 	title="Toggle theme"
-	class="c-button size-6 [view-transition-name:theme-switch]"
+	class="c-button size-6 [view-transition-name:theme-switch] {buttonClass}"
 	onclick={onClick}
 >
 	<svg

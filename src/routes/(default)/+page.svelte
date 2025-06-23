@@ -131,9 +131,10 @@
 </script>
 
 <main
-	class="flex-1 flex flex-col justify-end max-w-3xl w-full overflow-hidden min-h-128 mx-auto gap-16"
+	class="flex-1 flex flex-col justify-end max-w-3xl w-full overflow-hidden min-h-128 mx-auto gap-16
+	lg:flex-row lg:justify-center lg:max-w-full"
 >
-	<div class="px-8">
+	<div class="px-8 max-w-md lg:w-md">
 		<p class="font-sm font-medium text-base-fg/40">
 			{Intl.DateTimeFormat(getUserLocales(), { dateStyle: 'medium' }).format(Date.now())}
 		</p>

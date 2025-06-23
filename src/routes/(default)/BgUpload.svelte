@@ -11,6 +11,7 @@
 	import { ImageUp } from '@lucide/svelte';
 	import type { EventHandler } from 'svelte/elements';
 
+	const { class: cls }: { class?: string } = $props();
 	const { db, theme, bgFile, colorScheme } = useRuntime();
 
 	const onChange: EventHandler<Event, HTMLInputElement> = async (e) => {
@@ -65,14 +66,14 @@
 	};
 </script>
 
-<div class="[view-transition-name:bg-upload]">
+<div class="[view-transition-name:bg-upload] c-button {cls}">
 	<input
 		id="bg-upload"
 		type="file"
 		style="border: 0px; clip: rect(0px, 0px, 0px, 0px); height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; overflow-wrap: normal;"
 		onchange={onChange}
 	/>
-	<label for="bg-upload" class="c-button" title="Upload background image">
+	<label for="bg-upload" title="Upload background image">
 		<ImageUp />
 	</label>
 </div>
