@@ -8,6 +8,7 @@ interface Runtime {
 	scrollEl: Ref<HTMLElement | undefined>;
 	colorScheme: Ref<'light' | 'dark' | 'system'>;
 	theme: Ref<Theme | undefined>;
+	lastClickedTodoId: Ref<string | undefined>;
 }
 
 const symbol = Symbol('runtime');

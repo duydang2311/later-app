@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
+	import { invalidateAll } from '$app/navigation';
 	import type { Todo } from '$lib/models/todo';
 	import { Indexes } from '$lib/services/db';
 	import { useRuntime } from '$lib/services/runtime';
@@ -8,28 +9,9 @@
 	import { attempt } from '@duydang2311/attempt';
 	import { X } from '@lucide/svelte';
 
-	let todos = $state.raw<Todo[]>([]);
+	const { todos }: { todos: Todo[] } = $props();
 
-	const { db } = useRuntime();
-
-	export const invalidate = async () => {
-		const openTx = await db.transaction('todos', 'readonly');
-		if (openTx.failed) {
-			logError('Failed to open transaction for todos')(openTx.error);
-			return;
-		}
-		const index = openTx.data.store.index(Indexes.byDateAndTimestamp);
-		const now = new Date();
-		const date = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
-		const getTodos = await attempt.async(() =>
-			index.getAll(IDBKeyRange.bound([date, 0], [date, Number.POSITIVE_INFINITY]))
-		)(logError('Failed to get todos from DB'));
-		if (getTodos.failed) {
-			return;
-		}
-
-		todos = getTodos.data;
-	};
+	const { db, lastClickedTodoId } = useRuntime();
 
 	const deleteTodo = async (id: string) => {
 		const openTx = await db.transaction('todos', 'readwrite');
@@ -44,7 +26,7 @@
 				logError('Failed to commit transaction for deleting todo')
 			),
 		]);
-		await invalidate();
+		await invalidateAll();
 	};
 
 	const setComplete = async (id: string, value: boolean) => {
@@ -73,12 +55,8 @@
 				logError('Failed to commit transaction for updating todo')
 			),
 		]);
-		await invalidate();
+		await invalidateAll();
 	};
-
-	if (browser) {
-		invalidate();
-	}
 </script>
 
 <div
@@ -151,14 +129,20 @@
 							/>
 						</div>
 						<a
-						href="/todos/{todo.publicId}-{todo.slug}"
+							href="/todos/{todo.slug}-{todo.publicId}"
+							onclick={() => {
+								lastClickedTodoId.current = todo.id;
+							}}
 							class={[
-								'transition [view-transition-name:todo-title] w-fit',
+								'transition w-fit',
 								todo.completed ? 'text-primary font-medium' : 'group-hover:text-primary/60',
 							]}
+							style={lastClickedTodoId.current === todo.id
+								? 'view-transition-name: todo-title'
+								: undefined}
 						>
 							{todo.title}
-							</a>
+						</a>
 					</div>
 					<button
 						type="button"

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { invalidateAll } from '$app/navigation';
 	import { useRuntime } from '$lib/services/runtime';
 	import { generateNanoId, getUserLocales, logError } from '$lib/utils';
 	import { attempt } from '@duydang2311/attempt';
@@ -10,8 +11,10 @@
 	import slug from 'slug';
 	import { onMount } from 'svelte';
 	import { Spring } from 'svelte/motion';
+	import type { PageData } from './$types';
 	import Todos from './Todos.svelte';
 
+	const { data }: { data: PageData } = $props();
 	let caretEl = $state.raw<HTMLDivElement>();
 	let caretLh = 1;
 	let blinkTimeout = 0;
@@ -95,7 +98,7 @@
 				logError('Failed to commit transaction for adding todo')
 			),
 		]);
-		await todosHandle?.invalidate();
+		await invalidateAll();
 	};
 
 	onMount(() => {
@@ -190,7 +193,7 @@
 		</div>
 	</div>
 	<div bind:this={todosContainerEl} class="flex flex-col max-h-full overflow-auto">
-		<Todos bind:this={todosHandle} />
+		<Todos bind:this={todosHandle} todos={data.todos ?? []} />
 	</div>
 </main>
 <div

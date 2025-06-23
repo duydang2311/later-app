@@ -32,14 +32,6 @@
 	--color-negative-container-fg: #410002;
 	--color-outline: #8c9599;
 	--color-outline-variant: #191c1d;
-
-	--text-h1: 32px;
-	--text-h2: 24px;
-	--text-h3: 20px;
-	--text-h4: 18px;
-	--text-h5: 16px;
-	--text-h6: 16px;
-	--text-p: 16px;
 }
 
 @theme inline {
@@ -69,8 +61,6 @@
 			--color-negative-container: #93000a;
 			--color-negative-container-fg: #ffb4ab;
 		}
-
-		font-size: var(--text-p);
 	}
 
 	body {
@@ -78,9 +68,11 @@
 		line-height: 1.5;
 	}
 
-	::view-transition-group(*),
-	::view-transition-old(*),
-	::view-transition-new(*) {
+	::view-transition-group(root),
+	::view-transition-old(root),
+	::view-transition-new(root),
+	::view-transition-old(todo-title),
+	::view-transition-new(todo-title) {
 		animation-timing-function: ease-in-out;
 		animation-duration: 0.2s;
 	}

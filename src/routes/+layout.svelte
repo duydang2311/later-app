@@ -1,9 +1,7 @@
 <script lang="ts">
 	import './+layout.css';
 
-	import { browser } from '$app/environment';
 	import { onNavigate } from '$app/navigation';
-	import ThemeSwitch from '$lib/components/ThemeSwitch.svelte';
 	import { createRef } from '$lib/runes/ref.svelte';
 	import { setRuntime } from '$lib/services/runtime';
 	import {
@@ -14,7 +12,6 @@
 		logError,
 	} from '$lib/utils';
 	import { attempt } from '@duydang2311/attempt';
-	import { Github } from '@lucide/svelte';
 	import type { Theme } from '@material/material-color-utilities';
 	import { onMount, type Snippet } from 'svelte';
 	import type { LayoutData } from './$types';
@@ -29,6 +26,7 @@
 		scrollEl,
 		theme,
 		colorScheme,
+		lastClickedTodoId: createRef<string>(),
 	});
 	let src = $state.raw<string | undefined>(data.bg ? URL.createObjectURL(data.bg) : undefined);
 
@@ -170,20 +168,6 @@
 	}}
 >
 	<div class="relative flex-1 max-h-full flex flex-col">
-		<div class="flex justify-between p-4 gap-8">
-			<span class="font-playful lowercase font-medium text-2xl">Later</span>
-			<div class="flex gap-4">
-				<ThemeSwitch />
-				<a
-					href="https://github.com/duydang2311/later-app"
-					aria-label="Github"
-					target="_blank"
-					title="Open Github"
-				>
-					<Github />
-				</a>
-			</div>
-		</div>
 		{@render children()}
 	</div>
 </div>
