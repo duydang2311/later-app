@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { invalidateAll } from '$app/navigation';
+	import { createRef } from '$lib/runes/ref.svelte';
 	import { useRuntime } from '$lib/services/runtime';
 	import { generateNanoId, getUserLocales, logError } from '$lib/utils';
 	import { attempt } from '@duydang2311/attempt';
@@ -23,6 +23,7 @@
 	let springCaretWidth = new Spring(16, { damping: 0.6, stiffness: 0.3 });
 	let todosHandle = $state.raw<Todos>();
 	let todosContainerEl = $state.raw<HTMLDivElement>();
+	let todosRef = createRef(() => data.todos ?? []);
 	const springTop = new Spring(0, { damping: 0.6, stiffness: 0.2 });
 	const springLeft = new Spring(0, { damping: 0.6, stiffness: 0.2 });
 	const { scrollEl, db } = useRuntime();
@@ -98,7 +99,7 @@
 				logError('Failed to commit transaction for adding todo')
 			),
 		]);
-		await invalidateAll();
+		await todosHandle?.invalidate();
 	};
 
 	onMount(() => {
@@ -193,7 +194,7 @@
 		</div>
 	</div>
 	<div bind:this={todosContainerEl} class="flex flex-col max-h-full overflow-auto">
-		<Todos bind:this={todosHandle} todos={data.todos ?? []} />
+		<Todos bind:this={todosHandle} {todosRef} />
 	</div>
 </main>
 <div

@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 
+@import '$lib/stylesheets/transitions.css' layer(base);
 @import '$lib/stylesheets/c-button.css' layer(components);
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
@@ -76,21 +77,6 @@
 	body {
 		color: var(--color-base-fg);
 		line-height: 1.5;
-	}
-
-	::view-transition-group(*),
-	::view-transition-old(*),
-	::view-transition-new(*) {
-		animation-timing-function: ease-in-out;
-		animation-duration: 0.2s;
-	}
-
-	@media (prefers-reduced-motion) {
-		::view-transition-group(*),
-		::view-transition-old(*),
-		::view-transition-new(*) {
-			animation: none !important;
-		}
 	}
 }
 

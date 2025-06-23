@@ -8,6 +8,23 @@ export const getUserLocales = () => {
 	return navigator.languages || [navigator.language || 'en-US'];
 };
 
+export const resizeImage = (image: HTMLImageElement, width: number) => {
+	return new Promise<HTMLImageElement>((resolve) => {
+		const canvas = document.createElement('canvas');
+		const ctx = canvas.getContext('2d');
+		if (!ctx) {
+			throw new Error('Failed to get canvas context');
+		}
+		const ratio = image.width / image.height;
+		canvas.width = width;
+		canvas.height = width / ratio;
+		ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+		const resizedImage = new Image();
+		resizedImage.onload = () => resolve(resizedImage);
+		resizedImage.src = canvas.toDataURL();
+	});
+};
+
 export const getDominantArgb = (imageEl: HTMLImageElement) => {
 	colorThief ??= new ColorThief();
 	const [r, g, b] = colorThief.getColor(imageEl);

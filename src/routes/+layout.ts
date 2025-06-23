@@ -7,6 +7,7 @@ import type { Theme } from '@material/material-color-utilities';
 export const ssr = false;
 
 export const load: LayoutLoad = async () => {
+	console.log('layout load');
 	const db = createIndexedDb();
 
 	let bg: File | undefined;
@@ -20,6 +21,7 @@ export const load: LayoutLoad = async () => {
 		const [getTheme, getBg] = await Promise.all([
 			attempt.async(() => tx.store.get('theme') as Promise<string | undefined>)(
 				logError('Failed to get theme from DB')
+				
 			),
 			attempt.async(() => tx.store.get('bg') as Promise<File | undefined>)(
 				logError('Failed to get bg from DB')

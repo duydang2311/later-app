@@ -1,8 +1,8 @@
 import { error } from '@sveltejs/kit';
-import type { PageLoad } from './$types';
+import type { LayoutLoad } from './$types';
 import { Indexes } from '$lib/services/db';
 
-export const load: PageLoad = async ({ parent, params }) => {
+export const load: LayoutLoad = async ({ parent, params }) => {
 	const { db } = await parent();
 	const openTx = await db.transaction('todos', 'readonly');
 	if (openTx.failed) {

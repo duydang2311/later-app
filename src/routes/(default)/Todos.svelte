@@ -1,7 +1,6 @@
 <script lang="ts">
-	import { browser } from '$app/environment';
-	import { invalidateAll } from '$app/navigation';
 	import type { Todo } from '$lib/models/todo';
+	import type { Ref } from '$lib/runes/ref.svelte';
 	import { Indexes } from '$lib/services/db';
 	import { useRuntime } from '$lib/services/runtime';
 	import { logError } from '$lib/utils';
@@ -9,7 +8,8 @@
 	import { attempt } from '@duydang2311/attempt';
 	import { X } from '@lucide/svelte';
 
-	const { todos }: { todos: Todo[] } = $props();
+	const { todosRef }: { todosRef: Ref<Todo[]> } = $props();
+	const todos = $derived(todosRef.current);
 
 	const { db, lastClickedTodoId } = useRuntime();
 
@@ -26,7 +26,7 @@
 				logError('Failed to commit transaction for deleting todo')
 			),
 		]);
-		await invalidateAll();
+		await invalidate();
 	};
 
 	const setComplete = async (id: string, value: boolean) => {
@@ -55,7 +55,26 @@
 				logError('Failed to commit transaction for updating todo')
 			),
 		]);
-		await invalidateAll();
+		await invalidate();
+	};
+
+	export const invalidate = async () => {
+		const openTx = await db.transaction('todos', 'readonly');
+		if (openTx.failed) {
+			logError('Failed to open transaction for todos')(openTx.error);
+			return;
+		}
+		const index = openTx.data.store.index(Indexes.byDateAndTimestamp);
+		const now = new Date();
+		const date = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+		const getTodos = await attempt.async(() =>
+			index.getAll(IDBKeyRange.bound([date, 0], [date, Number.POSITIVE_INFINITY]))
+		)(logError('Failed to get todos from DB'));
+		if (getTodos.failed) {
+			return;
+		}
+
+		todosRef.current = getTodos.data;
 	};
 </script>
 

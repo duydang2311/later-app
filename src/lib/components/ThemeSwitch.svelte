@@ -78,7 +78,7 @@
 	type="button"
 	aria-label="Toggle theme"
 	title="Toggle theme"
-	class="c-button size-6"
+	class="c-button size-6 [view-transition-name:theme-switch]"
 	onclick={onClick}
 >
 	<svg
