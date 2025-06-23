@@ -22,27 +22,30 @@
 		bgFile.current = file;
 
 		const img = new Image();
-		img.src = URL.createObjectURL(file);
+		const objectUrl = URL.createObjectURL(file);
+		img.src = objectUrl;
 		img.onload = async () => {
 			const argb = getDominantArgb(img);
-			theme.current = generateThemeFromArgb(argb);
-			applyTheme(theme.current, isDarkColorScheme(colorScheme.current));
+			const newTheme = generateThemeFromArgb(argb);
+			theme.current = newTheme;
+			applyTheme(newTheme, isDarkColorScheme(colorScheme.current));
 
 			const openTx = await db.transaction('preferences', 'readwrite');
-			if (openTx.failed) {
+			if (openTx.ok) {
+				await Promise.all([
+					attempt.async(() => openTx.data.store.put(JSON.stringify(newTheme), 'theme'))(
+						logError('Failed to put theme in DB')
+					),
+					attempt.async(() => openTx.data.done)(
+						logError('Failed to commit transaction for updating theme')
+					),
+				]);
+			} else {
 				logError('Failed to open transaction for preferences')(openTx.error);
-				return;
 			}
 
-			await Promise.all([
-				attempt.async(() => openTx.data.store.put(JSON.stringify(theme.current), 'theme'))(
-					logError('Failed to put theme in DB')
-				),
-				attempt.async(() => openTx.data.done)(
-					logError('Failed to commit transaction for updating theme')
-				),
-			]);
 			img.remove();
+			URL.revokeObjectURL(objectUrl);
 		};
 
 		const openTx = await db.transaction('preferences', 'readwrite');

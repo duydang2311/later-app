@@ -31,10 +31,8 @@
 		lastClickedTodoId: createRef<string>(),
 		bgFile,
 	});
-	$inspect(bgFile.current);
-	
-	const src = $derived(bgFile.current ? URL.createObjectURL(bgFile.current) : undefined);
 
+	const src = $derived(bgFile.current ? URL.createObjectURL(bgFile.current) : undefined);
 
 	if (isDarkColorScheme(colorScheme.current)) {
 		document.documentElement.setAttribute('data-theme', 'dark');
@@ -118,30 +116,32 @@
 
 		bgFile.current = file;
 		const img = new Image();
-		img.src = URL.createObjectURL(file);
+		const objectUrl = URL.createObjectURL(file);
+		img.src = objectUrl;
 		const updateTheme = new Promise<void>((resolve) => {
 			img.onload = async () => {
 				const resized = img.width > 128 ? await resizeImage(img, 128) : img;
 				const argb = getDominantArgb(resized);
-				theme.current = generateThemeFromArgb(argb);
-				applyTheme(theme.current, isDarkColorScheme(colorScheme.current));
+				const newTheme = generateThemeFromArgb(argb);
+				theme.current = newTheme;
+				applyTheme(newTheme, isDarkColorScheme(colorScheme.current));
 
 				const openTx = await runtime.db.transaction('preferences', 'readwrite');
-				if (openTx.failed) {
+				if (openTx.ok) {
+					await Promise.all([
+						attempt.async(() => openTx.data.store.put(JSON.stringify(newTheme), 'theme'))(
+							logError('Failed to put theme in DB')
+						),
+						attempt.async(() => openTx.data.done)(
+							logError('Failed to commit transaction for updating theme')
+						),
+					]);
+				} else {
 					logError('Failed to open transaction for preferences')(openTx.error);
-					resolve();
-					return;
 				}
 
-				await Promise.all([
-					attempt.async(() => openTx.data.store.put(JSON.stringify(theme.current), 'theme'))(
-						logError('Failed to put theme in DB')
-					),
-					attempt.async(() => openTx.data.done)(
-						logError('Failed to commit transaction for updating theme')
-					),
-				]);
 				img.remove();
+				URL.revokeObjectURL(objectUrl);
 				resolve();
 			};
 		});
